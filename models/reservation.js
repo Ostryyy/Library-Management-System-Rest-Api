@@ -12,6 +12,10 @@ const Reservation = {
     const query = `SELECT * FROM reservations WHERE user_id = ?`;
     db.all(query, [userId], callback);
   },
+  delete: (id, callback) => {
+    const query = `DELETE FROM reservations WHERE id = ?`;
+    db.run(query, [id], callback);
+  },
 };
 
 module.exports = Reservation;

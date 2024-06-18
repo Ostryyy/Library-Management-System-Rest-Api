@@ -1,4 +1,4 @@
-const { body, validationResult } = require('express-validator');
+const { body, validationResult, param } = require('express-validator');
 const Reservation = require('../models/reservation');
 
 const reserveBook = [
@@ -27,4 +27,21 @@ const getUserReservations = (req, res) => {
   });
 };
 
-module.exports = { reserveBook, getUserReservations };
+const cancelReservation = [
+  param('id').isInt({ min: 1 }).withMessage('Reservation ID must be a positive integer'),
+
+  (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const reservationId = req.params.id;
+    Reservation.delete(reservationId, (err) => {
+      if (err) return res.status(500).send(err);
+      res.status(204).send();
+    });
+  }
+];
+
+module.exports = { reserveBook, getUserReservations, cancelReservation };
