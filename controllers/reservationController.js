@@ -8,14 +8,18 @@ const reserveBook = [
   (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.error(errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
     const { bookId } = req.body;
     const userId = req.userId;
     Reservation.create(userId, bookId, (err, reservationId) => {
-      if (err) return res.status(500).send(err);
-      History.create(userId, bookId, 'reserved', () => {});
+      if (err) {
+        console.error(err);
+        return res.status(500).send(err);
+      }
+      History.create(userId, bookId, 'reserved', () => { });
       res.status(201).send({ reservationId });
     });
   }
@@ -24,7 +28,10 @@ const reserveBook = [
 const getUserReservations = (req, res) => {
   const userId = req.userId;
   Reservation.getByUser(userId, (err, reservations) => {
-    if (err) return res.status(500).send(err);
+    if (err) {
+      console.error(err);
+      return res.status(500).send(err);
+    }
     res.send(reservations);
   });
 };
@@ -35,16 +42,28 @@ const cancelReservation = [
   (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.error(errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
     const reservationId = req.params.id;
-    Reservation.getById(reservationId, (err, reservation) => {
-      if (err) return res.status(500).send(err);
-      if (!reservation) return res.status(404).send('Reservation not found');
+    console.log('Cancel reservation ID:', reservationId);
+
+    Reservation.findById(reservationId, (err, reservation) => {
+      if (err) {
+        console.error('Error finding reservation:', err);
+        return res.status(500).send(err);
+      }
+      if (!reservation) {
+        console.error('Reservation not found');
+        return res.status(404).send('Reservation not found');
+      }
       Reservation.delete(reservationId, (err) => {
-        if (err) return res.status(500).send(err);
-        History.create(reservation.user_id, reservation.book_id, 'cancelled', () => {});
+        if (err) {
+          console.error('Error deleting reservation:', err);
+          return res.status(500).send(err);
+        }
+        History.create(reservation.user_id, reservation.book_id, 'cancelled', () => { });
         res.status(204).send();
       });
     });
