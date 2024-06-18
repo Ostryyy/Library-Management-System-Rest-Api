@@ -1,4 +1,4 @@
-const { body, validationResult } = require('express-validator');
+const { body, validationResult, param } = require('express-validator');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
@@ -46,4 +46,21 @@ const login = [
   }
 ];
 
-module.exports = { register, login };
+const deleteUser = [
+  param('id').isInt({ min: 1 }).withMessage('User ID must be a positive integer'),
+
+  (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const userId = req.params.id;
+    User.delete(userId, (err) => {
+      if (err) return res.status(500).send(err);
+      res.status(204).send();
+    });
+  }
+];
+
+module.exports = { register, login, deleteUser };

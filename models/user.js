@@ -10,6 +10,10 @@ const User = {
   findByUsername: (username, callback) => {
     const query = `SELECT * FROM users WHERE username = ?`;
     db.get(query, [username], callback);
+  },
+  delete: (id, callback) => {
+    const query = `DELETE FROM users WHERE id = ?`;
+    db.run(query, [id], callback);
   }
 };
 
