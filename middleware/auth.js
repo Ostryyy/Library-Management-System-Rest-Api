@@ -1,20 +1,25 @@
 const jwt = require('jsonwebtoken');
+const User = require('../models/user');
 
 const authMiddleware = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  if (!authHeader) return res.status(403).send('No token provided');
-
-  const token = authHeader.split(' ')[1]; 
-  if (!token) return res.status(403).send('No token provided');
-
-  jwt.verify(token, 'secret', (err, decoded) => {
-    if (err) {
-      return res.status(500).send('Failed to authenticate token');
-    }
+  const token = req.headers['authorization']?.split(' ')[1];
+  if (!token) {
+    return res.status(401).send('Access denied');
+  }
+  try {
+    const decoded = jwt.verify(token, 'secret');
     req.userId = decoded.id;
-    req.userRole = decoded.role; 
-    next();
-  });
+
+    User.findById(req.userId, (err, user) => {
+      if (err || !user) {
+        return res.status(401).send('Access denied');
+      }
+      req.userRole = user.role;
+      next();
+    });
+  } catch (err) {
+    res.status(400).send('Invalid token');
+  }
 };
 
 module.exports = authMiddleware;
