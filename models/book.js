@@ -11,6 +11,10 @@ const Book = {
     const query = `SELECT * FROM books`;
     db.all(query, [], callback);
   },
+  delete: (id, callback) => {
+    const query = `DELETE FROM books WHERE id = ?`;
+    db.run(query, [id], callback);
+  },
 };
 
 module.exports = Book;

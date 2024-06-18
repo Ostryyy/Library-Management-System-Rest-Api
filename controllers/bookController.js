@@ -1,4 +1,4 @@
-const { body, validationResult } = require('express-validator');
+const { body, validationResult, param } = require('express-validator');
 const Book = require('../models/book');
 
 const addBook = [
@@ -29,4 +29,21 @@ const getAllBooks = (req, res) => {
   });
 };
 
-module.exports = { addBook, getAllBooks };
+const deleteBook = [
+  param('id').isInt({ min: 1 }).withMessage('Book ID must be a positive integer'),
+
+  (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const bookId = req.params.id;
+    Book.delete(bookId, (err) => {
+      if (err) return res.status(500).send(err);
+      res.status(204).send();
+    });
+  }
+];
+
+module.exports = { addBook, getAllBooks, deleteBook };
