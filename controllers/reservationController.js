@@ -1,19 +1,21 @@
 const { body, validationResult, param } = require('express-validator');
 const Reservation = require('../models/reservation');
+const History = require('../models/history');
 
 const reserveBook = [
   body('bookId').isInt({ min: 0 }).withMessage('Book ID must be a positive integer'),
-  
+
   (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    
+
     const { bookId } = req.body;
     const userId = req.userId;
     Reservation.create(userId, bookId, (err, reservationId) => {
       if (err) return res.status(500).send(err);
+      History.create(userId, bookId, 'reserved', () => {});
       res.status(201).send({ reservationId });
     });
   }
@@ -37,9 +39,14 @@ const cancelReservation = [
     }
 
     const reservationId = req.params.id;
-    Reservation.delete(reservationId, (err) => {
+    Reservation.getById(reservationId, (err, reservation) => {
       if (err) return res.status(500).send(err);
-      res.status(204).send();
+      if (!reservation) return res.status(404).send('Reservation not found');
+      Reservation.delete(reservationId, (err) => {
+        if (err) return res.status(500).send(err);
+        History.create(reservation.user_id, reservation.book_id, 'cancelled', () => {});
+        res.status(204).send();
+      });
     });
   }
 ];
