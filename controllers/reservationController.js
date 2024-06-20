@@ -1,9 +1,11 @@
-const { body, validationResult, param } = require('express-validator');
-const Reservation = require('../models/reservation');
-const History = require('../models/history');
+const { body, validationResult, param } = require("express-validator");
+const Reservation = require("../models/reservation");
+const History = require("../models/history");
 
 const reserveBook = [
-  body('bookId').isInt({ min: 0 }).withMessage('Book ID must be a positive integer'),
+  body("bookId")
+    .isInt({ min: 0 })
+    .withMessage("Book ID must be a positive integer"),
 
   (req, res) => {
     const errors = validationResult(req);
@@ -19,10 +21,10 @@ const reserveBook = [
         console.error(err);
         return res.status(500).send(err);
       }
-      History.create(userId, bookId, 'reserved', () => { });
+      History.create(userId, bookId, "reserved", () => {});
       res.status(201).send({ reservationId });
     });
-  }
+  },
 ];
 
 const getUserReservations = (req, res) => {
@@ -37,7 +39,9 @@ const getUserReservations = (req, res) => {
 };
 
 const cancelReservation = [
-  param('id').isInt({ min: 1 }).withMessage('Reservation ID must be a positive integer'),
+  param("id")
+    .isInt({ min: 1 })
+    .withMessage("Reservation ID must be a positive integer"),
 
   (req, res) => {
     const errors = validationResult(req);
@@ -47,27 +51,55 @@ const cancelReservation = [
     }
 
     const reservationId = req.params.id;
-    console.log('Cancel reservation ID:', reservationId);
+    console.log("Cancel reservation ID:", reservationId);
 
     Reservation.findById(reservationId, (err, reservation) => {
       if (err) {
-        console.error('Error finding reservation:', err);
+        console.error("Error finding reservation:", err);
         return res.status(500).send(err);
       }
       if (!reservation) {
-        console.error('Reservation not found');
-        return res.status(404).send('Reservation not found');
+        console.error("Reservation not found");
+        return res.status(404).send("Reservation not found");
       }
       Reservation.delete(reservationId, (err) => {
         if (err) {
-          console.error('Error deleting reservation:', err);
+          console.error("Error deleting reservation:", err);
           return res.status(500).send(err);
         }
-        History.create(reservation.user_id, reservation.book_id, 'cancelled', () => { });
+        History.create(
+          reservation.user_id,
+          reservation.book_id,
+          "cancelled",
+          () => {}
+        );
         res.status(204).send();
       });
     });
-  }
+  },
 ];
 
-module.exports = { reserveBook, getUserReservations, cancelReservation };
+const getReservationsByBook = [
+  param("bookId")
+    .isInt({ min: 1 })
+    .withMessage("Book ID must be a positive integer"),
+  (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const bookId = req.params.bookId;
+    Reservation.getByBook(bookId, (err, reservations) => {
+      if (err) return res.status(500).send(err);
+      res.send(reservations);
+    });
+  },
+];
+
+module.exports = {
+  reserveBook,
+  getUserReservations,
+  cancelReservation,
+  getReservationsByBook,
+};
